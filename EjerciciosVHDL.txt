@@ -399,6 +399,7 @@ begin
  end if;
 end process;
 end cod;
+-----------------------------------------------------------------
 EJERCICIO 25
 library ieee;
 use ieee.std_logic_1164.all;
