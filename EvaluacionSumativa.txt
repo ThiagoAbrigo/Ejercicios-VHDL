@@ -1,0 +1,60 @@
+==================================================================================
+                              EVALUACION SUMATIVA
+==================================================================================
+Maquina de estados
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity Maquina_Estado_2Bits is
+    Port ( e : in  STD_LOGIC;
+           clk : in  STD_LOGIC;
+           s : out  STD_LOGIC;
+           salida : out  STD_LOGIC_VECTOR (1 downto 0));
+end Maquina_Estado_2Bits;
+
+architecture Behavioral of Maquina_Estado_2Bits is
+type estados is (A, B, C, D);
+signal x: estados := A;
+begin
+process (x, clk)
+begin
+   if(clk'event and clk = '1') then
+	   if e = '0' then
+		   case x is
+			   when A =>
+				     x <= D;
+					  salida <= "01";
+				when B =>
+				     x <= A;
+					  salida <= "00";
+				when C =>
+				     x <= B;
+					  salida <= "10";
+				when D =>
+				     x <= C;
+					  salida <= "11";
+			 end case;
+		 elsif e = '1' then
+		     case x is
+			   when A =>
+				     x <= B;
+					  salida <= "10";
+				when B =>
+				     x <= C;
+					  salida <= "11";
+				when C =>
+				     x <= D;
+					  salida <= "01";
+				when D =>
+				     x <= A;
+					  salida <= "00";
+			 end case;
+		 end if;
+	end if;
+end process;
+s <= '1' when x = A else
+     '1' when x = C else
+	  '0';
+end Behavioral;
+------------------------------------------------------------------------------------------------
