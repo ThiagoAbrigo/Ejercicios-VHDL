@@ -6,55 +6,94 @@ Maquina de estados
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity Maquina_Estado_2Bits is
-    Port ( e : in  STD_LOGIC;
-           clk : in  STD_LOGIC;
-           s : out  STD_LOGIC;
-           salida : out  STD_LOGIC_VECTOR (1 downto 0));
-end Maquina_Estado_2Bits;
+entity Maquina_Estado_Semaforo is
+    Port ( sensor, reset, clk : in  STD_LOGIC;
+           semaforoCamino, semaforoCarretera : out  STD_LOGIC_VECTOR (0 to 2));
+end Maquina_Estado_Semaforo;
 
-architecture Behavioral of Maquina_Estado_2Bits is
-type estados is (A, B, C, D);
-signal x: estados := A;
+architecture Behavioral of Maquina_Estado_Semaforo is
+type estado is (inicio, carretera_amarilla, camino_verde, camino_amarilla, espera);
+
+constant verde: std_logic_vector (0 to 2):= "001";
+constant amarillo: std_logic_vector (0 to 2):= "010";
+constant rojo: std_logic_vector (0 to 2):= "100";
+
+signal presente: estado:= inicio;
+signal contador: boolean:= false;
+signal fin_largo, fin_corto: boolean;
+signal cuenta: integer range 0 to 63;
+
 begin
-process (x, clk)
+process (clk, reset)
 begin
-   if(clk'event and clk = '1') then
-	   if e = '0' then
-		   case x is
-			   when A =>
-				     x <= D;
-					  salida <= "01";
-				when B =>
-				     x <= A;
-					  salida <= "00";
-				when C =>
-				     x <= B;
-					  salida <= "10";
-				when D =>
-				     x <= C;
-					  salida <= "11";
-			 end case;
-		 elsif e = '1' then
-		     case x is
-			   when A =>
-				     x <= B;
-					  salida <= "10";
-				when B =>
-				     x <= C;
-					  salida <= "11";
-				when C =>
-				     x <= D;
-					  salida <= "01";
-				when D =>
-				     x <= A;
-					  salida <= "00";
-			 end case;
-		 end if;
+  if(reset = '1') then
+     presente <= inicio;
+  elsif rising_edge(clk) then
+     case presente is
+	       when inicio =>
+			     if sensor = '1' then
+				     presente <= carretera_amarilla;
+				  end if;
+				  
+           when carretera_amarilla =>
+				     presente <= camino_verde;
+					  
+				when camino_verde =>
+			     if fin_corto then
+				     presente <= camino_amarilla;
+				  end if;
+				  
+				when camino_amarilla =>
+				     presente <= espera;
+					  
+			   when espera =>
+				   if fin_largo then
+				     presente <= inicio;
+					end if;
+	  end case;
 	end if;
-end process;
-s <= '1' when x = A else
-     '1' when x = C else
-	  '0';
+end process semaforo;
+
+salida:
+process (presente)
+begin
+   case presente is
+	   when inicio =>
+		    semaforoCarretera <= verde;
+			 semaforoCamino <= rojo;
+			 contador <= true;
+	   when carretera_amarilla =>
+		    semaforoCarretera <= amarillo;
+			 semaforoCamino <= rojo;
+			 contador <= true;
+		when camino_verde =>
+		    semaforoCarretera <= rojo;
+			 semaforoCamino <= verde;
+			 contador <= false;
+		when camino_amarilla =>
+		    semaforoCarretera <= rojo;
+			 semaforoCamino <= amarillo;
+			 contador <= true;
+		when espera =>
+		    semaforoCarretera <= verde;
+			 semaforoCamino <= rojo;
+			 contador <= false;
+	end case;
+end process salida;
+--Contador--
+cont:
+process(clk)
+begin
+  if clk = '1' then
+     if contador then cuenta <= 0;
+	  else cuenta <= cuenta + 1;
+	  end if;
+   end if;
+end process cont;
+--tiempos largos y cortos--
+fin_largo <= true when cuenta = 29 else false;
+fin_corto <= true when cuenta = 9 else false;
 end Behavioral;
+
+
 ------------------------------------------------------------------------------------------------
